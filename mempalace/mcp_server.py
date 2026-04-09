@@ -179,7 +179,11 @@ def tool_list_wings():
                 wings[w] = wings.get(w, 0) + 1
             offset += batch_size
         except Exception as e:
-            return {"wings": wings, "error": f"Partial result, failed at offset {offset}: {str(e)}", "partial": True}
+            return {
+                "wings": wings,
+                "error": f"Partial result, failed at offset {offset}: {str(e)}",
+                "partial": True,
+            }
     return {"wings": wings}
 
 
@@ -206,7 +210,12 @@ def tool_list_rooms(wing: str = None):
                 rooms[r] = rooms.get(r, 0) + 1
             offset += batch_size
         except Exception as e:
-            return {"wing": wing or "all", "rooms": rooms, "error": f"Partial result, failed at offset {offset}: {str(e)}", "partial": True}
+            return {
+                "wing": wing or "all",
+                "rooms": rooms,
+                "error": f"Partial result, failed at offset {offset}: {str(e)}",
+                "partial": True,
+            }
     return {"wing": wing or "all", "rooms": rooms}
 
 
@@ -232,7 +241,11 @@ def tool_get_taxonomy():
                 taxonomy[w][r] = taxonomy[w].get(r, 0) + 1
             offset += batch_size
         except Exception as e:
-            return {"taxonomy": taxonomy, "error": f"Partial result, failed at offset {offset}: {str(e)}", "partial": True}
+            return {
+                "taxonomy": taxonomy,
+                "error": f"Partial result, failed at offset {offset}: {str(e)}",
+                "partial": True,
+            }
     return {"taxonomy": taxonomy}
 
 
