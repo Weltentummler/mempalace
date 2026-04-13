@@ -48,7 +48,11 @@ def cmd_init(args):
     if files:
         print(f"  Reading {len(files)} files...")
         detected = detect_entities(files)
-        total = len(detected["people"]) + len(detected["projects"]) + len(detected["uncertain"])
+        total = (
+            len(detected["people"])
+            + len(detected["projects"])
+            + len(detected["uncertain"])
+        )
         if total > 0:
             confirmed = confirm_entities(detected, yes=getattr(args, "yes", False))
             # Save confirmed entities to <project>/entities.json for the miner
@@ -66,7 +70,11 @@ def cmd_init(args):
 
 
 def cmd_mine(args):
-    palace_path = os.path.expanduser(args.palace) if args.palace else MempalaceConfig().palace_path
+    palace_path = (
+        os.path.expanduser(args.palace)
+        if args.palace
+        else MempalaceConfig().palace_path
+    )
     include_ignored = []
     for raw in args.include_ignored or []:
         include_ignored.extend(part.strip() for part in raw.split(",") if part.strip())
@@ -101,7 +109,11 @@ def cmd_mine(args):
 def cmd_search(args):
     from .searcher import search, SearchError
 
-    palace_path = os.path.expanduser(args.palace) if args.palace else MempalaceConfig().palace_path
+    palace_path = (
+        os.path.expanduser(args.palace)
+        if args.palace
+        else MempalaceConfig().palace_path
+    )
     try:
         search(
             query=args.query,
@@ -118,7 +130,11 @@ def cmd_wakeup(args):
     """Show L0 (identity) + L1 (essential story) — the wake-up context."""
     from .layers import MemoryStack
 
-    palace_path = os.path.expanduser(args.palace) if args.palace else MempalaceConfig().palace_path
+    palace_path = (
+        os.path.expanduser(args.palace)
+        if args.palace
+        else MempalaceConfig().palace_path
+    )
     stack = MemoryStack(palace_path=palace_path)
 
     text = stack.wake_up(wing=args.wing)
@@ -155,14 +171,26 @@ def cmd_migrate(args):
     """Migrate palace from a different ChromaDB version."""
     from .migrate import migrate
 
-    palace_path = os.path.expanduser(args.palace) if args.palace else MempalaceConfig().palace_path
-    migrate(palace_path=palace_path, dry_run=args.dry_run, confirm=getattr(args, "yes", False))
+    palace_path = (
+        os.path.expanduser(args.palace)
+        if args.palace
+        else MempalaceConfig().palace_path
+    )
+    migrate(
+        palace_path=palace_path,
+        dry_run=args.dry_run,
+        confirm=getattr(args, "yes", False),
+    )
 
 
 def cmd_status(args):
     from .miner import status
 
-    palace_path = os.path.expanduser(args.palace) if args.palace else MempalaceConfig().palace_path
+    palace_path = (
+        os.path.expanduser(args.palace)
+        if args.palace
+        else MempalaceConfig().palace_path
+    )
     status(palace_path=palace_path)
 
 
@@ -173,7 +201,9 @@ def cmd_repair(args):
     from .migrate import confirm_destructive_action, contains_palace_database
 
     palace_path = os.path.abspath(
-        os.path.expanduser(args.palace) if args.palace else MempalaceConfig().palace_path
+        os.path.expanduser(args.palace)
+        if args.palace
+        else MempalaceConfig().palace_path
     )
     db_path = os.path.join(palace_path, "chroma.sqlite3")
 
@@ -217,7 +247,9 @@ def cmd_repair(args):
     all_metas = []
     offset = 0
     while offset < total:
-        batch = col.get(limit=batch_size, offset=offset, include=["documents", "metadatas"])
+        batch = col.get(
+            limit=batch_size, offset=offset, include=["documents", "metadatas"]
+        )
         all_ids.extend(batch["ids"])
         all_docs.extend(batch["documents"])
         all_metas.extend(batch["metadatas"])
@@ -240,7 +272,9 @@ def cmd_repair(args):
 
     print("  Rebuilding collection...")
     client.delete_collection("mempalace_drawers")
-    new_col = client.create_collection("mempalace_drawers")
+    new_col = client.create_collection(
+        "mempalace_drawers", metadata={"hnsw:space": "cosine"}
+    )
 
     filed = 0
     for i in range(0, len(all_ids), batch_size):
@@ -287,7 +321,9 @@ def cmd_mcp(args):
 
     if not args.palace:
         print("\nOptional custom palace:")
-        print(f"  claude mcp add mempalace -- {base_server_cmd} --palace /path/to/palace")
+        print(
+            f"  claude mcp add mempalace -- {base_server_cmd} --palace /path/to/palace"
+        )
         print(f"  {base_server_cmd} --palace /path/to/palace")
 
 
@@ -296,7 +332,11 @@ def cmd_compress(args):
     import chromadb
     from .dialect import Dialect
 
-    palace_path = os.path.expanduser(args.palace) if args.palace else MempalaceConfig().palace_path
+    palace_path = (
+        os.path.expanduser(args.palace)
+        if args.palace
+        else MempalaceConfig().palace_path
+    )
 
     # Load dialect (with optional entity config)
     config_path = args.config
@@ -328,7 +368,11 @@ def cmd_compress(args):
     offset = 0
     while True:
         try:
-            kwargs = {"include": ["documents", "metadatas"], "limit": _BATCH, "offset": offset}
+            kwargs = {
+                "include": ["documents", "metadatas"],
+                "limit": _BATCH,
+                "offset": offset,
+            }
             if where:
                 kwargs["where"] = where
             batch = col.get(**kwargs)
@@ -386,7 +430,9 @@ def cmd_compress(args):
     # Store compressed versions (unless dry-run)
     if not args.dry_run:
         try:
-            comp_col = client.get_or_create_collection("mempalace_compressed")
+            comp_col = client.get_or_create_collection(
+                "mempalace_compressed", metadata={"hnsw:space": "cosine"}
+            )
             for doc_id, compressed, meta, stats in compressed_entries:
                 comp_meta = dict(meta)
                 comp_meta["compression_ratio"] = round(stats["size_ratio"], 1)
@@ -431,7 +477,9 @@ def main():
     p_init = sub.add_parser("init", help="Detect rooms from your folder structure")
     p_init.add_argument("dir", help="Project directory to set up")
     p_init.add_argument(
-        "--yes", action="store_true", help="Auto-accept all detected entities (non-interactive)"
+        "--yes",
+        action="store_true",
+        help="Auto-accept all detected entities (non-interactive)",
     )
 
     # mine
@@ -443,7 +491,9 @@ def main():
         default="projects",
         help="Ingest mode: 'projects' for code/docs (default), 'convos' for chat exports",
     )
-    p_mine.add_argument("--wing", default=None, help="Wing name (default: directory name)")
+    p_mine.add_argument(
+        "--wing", default=None, help="Wing name (default: directory name)"
+    )
     p_mine.add_argument(
         "--no-gitignore",
         action="store_true",
@@ -460,7 +510,9 @@ def main():
         default="mempalace",
         help="Your name — recorded on every drawer (default: mempalace)",
     )
-    p_mine.add_argument("--limit", type=int, default=0, help="Max files to process (0 = all)")
+    p_mine.add_argument(
+        "--limit", type=int, default=0, help="Max files to process (0 = all)"
+    )
     p_mine.add_argument(
         "--dry-run", action="store_true", help="Show what would be filed without filing"
     )
@@ -482,7 +534,9 @@ def main():
     p_compress = sub.add_parser(
         "compress", help="Compress drawers using AAAK Dialect (~30x reduction)"
     )
-    p_compress.add_argument("--wing", default=None, help="Wing to compress (default: all wings)")
+    p_compress.add_argument(
+        "--wing", default=None, help="Wing to compress (default: all wings)"
+    )
     p_compress.add_argument(
         "--dry-run", action="store_true", help="Preview compression without storing"
     )
@@ -491,8 +545,12 @@ def main():
     )
 
     # wake-up
-    p_wakeup = sub.add_parser("wake-up", help="Show L0 + L1 wake-up context (~600-900 tokens)")
-    p_wakeup.add_argument("--wing", default=None, help="Wake-up for a specific project/wing")
+    p_wakeup = sub.add_parser(
+        "wake-up", help="Show L0 + L1 wake-up context (~600-900 tokens)"
+    )
+    p_wakeup.add_argument(
+        "--wing", default=None, help="Wake-up for a specific project/wing"
+    )
 
     # split
     p_split = sub.add_parser(
@@ -544,13 +602,17 @@ def main():
     )
     instructions_sub = p_instructions.add_subparsers(dest="instructions_name")
     for instr_name in ["init", "search", "mine", "help", "status"]:
-        instructions_sub.add_parser(instr_name, help=f"Output {instr_name} instructions")
+        instructions_sub.add_parser(
+            instr_name, help=f"Output {instr_name} instructions"
+        )
 
     # repair
     sub.add_parser(
         "repair",
         help="Rebuild palace vector index from stored data (fixes segfaults after corruption)",
-    ).add_argument("--yes", action="store_true", help="Skip confirmation for destructive changes")
+    ).add_argument(
+        "--yes", action="store_true", help="Skip confirmation for destructive changes"
+    )
 
     # mcp
     sub.add_parser(
